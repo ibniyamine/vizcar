@@ -1,0 +1,17 @@
+credentials:
+  usernames:
+    anoir:
+      email: jsmith@gmail.com
+      name: Anoir ibniyamine
+      password: abc # To be replaced with hashed password
+    admin:
+      email: rbriggs@gmail.com
+      name: sidiki Tall
+      password: Passer@123 # To be replaced with hashed password
+cookie:
+  expiry_days: 0
+  key: random_signature_key # Must be string
+  name: random_cookie_name
+preauthorized:
+  emails:
+  - ibniyamineanoir@gmail.com
