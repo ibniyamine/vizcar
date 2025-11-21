@@ -50,7 +50,14 @@ except LoginError as e:
 
 if st.session_state.get('authentication_status') and not st.session_state.get('already_logged_in'):
     st.session_state['already_logged_in'] = True
+
+    # 🔑 Injecter la compagnie depuis le YAML
+    username = st.session_state["username"]
+    user_config = config["credentials"]["usernames"].get(username, {})
+    st.session_state["compagnie"] = user_config.get("compagnie", None)
+
     st.rerun()
+
 
 # Réinitialiser le flag après déconnexion
 if st.session_state.get('authentication_status') is False or st.session_state.get('authentication_status') is None:
@@ -58,12 +65,15 @@ if st.session_state.get('authentication_status') is False or st.session_state.ge
 
 # Affichage conditionnel
 if st.session_state.get('authentication_status'):
+    compagnie = st.session_state.get("compagnie", None)
     with st.sidebar:
         authenticator.logout()
         st.write(f'Bienvenue *{st.session_state["name"]}*')
     st.title("📊 Tableau de bord de visualisation des vehicules")
     df = pd.read_parquet("vehicule11.parquet")
-    
+    if compagnie:
+        df = df[df['Compagnie'] == compagnie]
+
     # filtrer par date
     ## conversion de la colonne date
     df['veh_date_circulation'] = pd.to_datetime(df['veh_date_circulation'], errors='coerce')
@@ -129,11 +139,11 @@ if st.session_state.get('authentication_status'):
     #Filtrage par matricule
 
 
-
-    compagnie_disponible = df['Compagnie'].unique().tolist()
-    veh_immatriculation = st.sidebar.multiselect("Compagnies", compagnie_disponible)
-    if veh_immatriculation:
-        df = df[df['Compagnie'].isin(veh_immatriculation)]
+    if not compagnie:
+        compagnie_disponible = df['Compagnie'].unique().tolist()
+        veh_immatriculation = st.sidebar.multiselect("Compagnies", compagnie_disponible)
+        if veh_immatriculation:
+            df = df[df['Compagnie'].isin(veh_immatriculation)]
 
     statuts_disponibles = df['anomalie'].unique().tolist()
 
@@ -173,7 +183,11 @@ if st.session_state.get('authentication_status'):
         """, unsafe_allow_html=True)
 
     # Affichage en colonnes
-    col1, col2, col3, col4, col5 = st.columns(5)
+    if not compagnie:
+        col1, col2, col3, col4, col5 = st.columns(5)
+    else:
+        col1, col2, col3, col4 = st.columns(4)
+
 
     with col1:
         kpi_card("Nombre d'enregistrement", f"{enregistrement:,.0f}", "👥")
@@ -186,9 +200,9 @@ if st.session_state.get('authentication_status'):
 
     with col4:
         kpi_card("vehicules cleans", nb_vehicule_clean, "🧾")
-
-    with col5:
-        kpi_card("nombre de compagnies", nb_compagnie, "🧾")
+    if not compagnie:
+        with col5:
+            kpi_card("nombre de compagnies", nb_compagnie, "🧾")
 
 
 
@@ -261,70 +275,68 @@ if st.session_state.get('authentication_status'):
         fig_modele.update_layout(template="plotly_dark", height=420, margin=dict(l=10, r=10, t=40, b=10))
         st.plotly_chart(fig_modele, width='stretch')
 
-    
-    # Pie par marque (part de parc)
-    if "Compagnie" in df.columns:
-        pie_counts = df["Compagnie"].astype(str).value_counts().reset_index()
-        pie_counts.columns = ["Compagnie", "count"]
-        fig_pie = px.pie(
-            pie_counts.head(15), values="count", names="Compagnie", title="Répartition des compagnies"
-        )
-        fig_pie.update_layout(template="plotly_dark", height=420)
-        st.plotly_chart(fig_pie, width='stretch')
+    if not compagnie:
+        # Pie par marque (part de parc)
+        if "Compagnie" in df.columns:
+            pie_counts = df["Compagnie"].astype(str).value_counts().reset_index()
+            pie_counts.columns = ["Compagnie", "count"]
+            fig_pie = px.pie(
+                pie_counts.head(15), values="count", names="Compagnie", title="Répartition des compagnies"
+            )
+            fig_pie.update_layout(template="plotly_dark", height=420)
+            st.plotly_chart(fig_pie, width='stretch')
 
 
 
-    # Sélection des compagnies (via Streamlit)
-    compagnies_selectionnees = st.multiselect(
-        "Sélectionnez deux compagnies d'assurance",
-        options=df['Compagnie'].unique(),
-        default=df['Compagnie'].unique()[:2]
-    )
-
-    # Vérifier qu'on a bien deux compagnies
-    if len(compagnies_selectionnees) == 2:
-        # Filtrer les données
-        df_filtré = df[df['Compagnie'].isin(compagnies_selectionnees)].copy()
-
-        # Créer les colonnes de tri et d'affichage
-        df_filtré['Mois_Annee_tri'] = df_filtré['veh_date_circulation'].dt.to_period('M').astype(str)
-        df_filtré['Mois_Annee_date'] = pd.to_datetime(df_filtré['Mois_Annee_tri'])
-        df_filtré['Mois_Annee_affichage'] = df_filtré['Mois_Annee_date'].dt.strftime('%b %Y')
-
-        # Grouper par mois et compagnie
-        ventes_par_mois = (
-            df_filtré.groupby(['Mois_Annee_date', 'Compagnie'])
-            .size()
-            .reset_index(name='Total_ventes')
+        # Sélection des compagnies (via Streamlit)
+        compagnies_selectionnees = st.multiselect(
+            "Sélectionnez deux compagnies d'assurance",
+            options=df['Compagnie'].unique(),
+            default=df['Compagnie'].unique()[:2]
         )
 
-        # Tracer la courbe avec une couleur par compagnie
-        fig = px.line(
-            ventes_par_mois,
-            x='Mois_Annee_date',
-            y='Total_ventes',
-            color='Compagnie',
-            markers=True,
-            title="Comparaison des immatriculations par compagnie d'assurance"
-        )
-        fig.update_xaxes(
-            tickformat="%b\n%Y",
-            tickangle=0,
-            title="Mois"
-        )
-        fig.update_yaxes(title="Nombre d'immatriculations")
-        fig.update_layout(legend_title_text="Compagnie")
+        # Vérifier qu'on a bien deux compagnies
+        if len(compagnies_selectionnees) == 2:
+            # Filtrer les données
+            df_filtré = df[df['Compagnie'].isin(compagnies_selectionnees)].copy()
 
-        # Afficher dans Streamlit
-        st.plotly_chart(fig)
+            # Créer les colonnes de tri et d'affichage
+            df_filtré['Mois_Annee_tri'] = df_filtré['veh_date_circulation'].dt.to_period('M').astype(str)
+            df_filtré['Mois_Annee_date'] = pd.to_datetime(df_filtré['Mois_Annee_tri'])
+            df_filtré['Mois_Annee_affichage'] = df_filtré['Mois_Annee_date'].dt.strftime('%b %Y')
 
-    else:
-        st.warning("Veuillez sélectionner exactement deux compagnies pour la comparaison.")
+            # Grouper par mois et compagnie
+            ventes_par_mois = (
+                df_filtré.groupby(['Mois_Annee_date', 'Compagnie'])
+                .size()
+                .reset_index(name='Total_ventes')
+            )
+
+            # Tracer la courbe avec une couleur par compagnie
+            fig = px.line(
+                ventes_par_mois,
+                x='Mois_Annee_date',
+                y='Total_ventes',
+                color='Compagnie',
+                markers=True,
+                title="Comparaison des immatriculations par compagnie d'assurance"
+            )
+            fig.update_xaxes(
+                tickformat="%b\n%Y",
+                tickangle=0,
+                title="Mois"
+            )
+            fig.update_yaxes(title="Nombre d'immatriculations")
+            fig.update_layout(legend_title_text="Compagnie")
+
+            # Afficher dans Streamlit
+            st.plotly_chart(fig)
+
+        else:
+            st.warning("Veuillez sélectionner exactement deux compagnies pour la comparaison.")
     
 
 elif st.session_state.get('authentication_status') is False:
     st.error('Username/password is incorrect')
 elif st.session_state.get('authentication_status') is None:
     st.warning('Please enter your username and password')
-
-

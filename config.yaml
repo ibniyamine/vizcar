@@ -4,12 +4,18 @@ credentials:
       email: jsmith@gmail.com
       name: Anoir ibniyamine
       password: abc # To be replaced with hashed password
+      compagnie: AXA
+    saaruser:
+      email: jsmith@gmail.com
+      name: SAAR
+      password: Passer@123 # To be replaced with hashed password
+      compagnie: SAAR
     admin:
       email: rbriggs@gmail.com
       name: sidiki Tall
       password: Passer@123 # To be replaced with hashed password
 cookie:
-  expiry_days: 0
+  expiry_days: 30
   key: random_signature_key # Must be string
   name: random_cookie_name
 preauthorized:
