@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import streamlit_authenticator as stauth
 import yaml
+import base64
+
+
 
 #from streamlit_dynamic_filters import DynamicFilters"
 
@@ -24,9 +27,6 @@ authenticator = stauth.Authenticate(
 
 
 
-
-import streamlit as st
-
 # CSS personnalisé
 st.markdown("""
     <style>
@@ -38,6 +38,16 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
+# Fonction pour convertir une image locale en base64
+def get_base64_of_image(image_path):
+    with open(image_path, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# Charger ton logo
+logo_base64 = get_base64_of_image("assets/logo.png")
+
 
 
 
@@ -67,9 +77,40 @@ if st.session_state.get('authentication_status') is False or st.session_state.ge
 if st.session_state.get('authentication_status'):
     compagnie = st.session_state.get("compagnie", None)
     with st.sidebar:
+        st.markdown(
+        f"""
+        <div style="text-align: center; margin-top: -20px; margin-bottom: 20px;">
+            <img src="data:image/png;base64,{logo_base64}" 
+                 style="border-radius: 50%; width:90px; height:90px; margin:10px;">
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
         authenticator.logout()
-        st.write(f'Bienvenue *{st.session_state["name"]}*')
-    st.title("📊 Tableau de bord de visualisation des vehicules")
+        # CSS pour agrandir le bouton logout
+        st.markdown(
+            """
+            <style>
+            div.stButton > button:first-child {
+                background-color: #ff4b4b;
+                color: white;
+                padding: 12px 24px;
+                width: 100%;
+                height: 10px;
+                font-size: 18px;
+                border-radius: 8px;
+                border: none;
+            }
+            div.stButton > button:first-child:hover {
+                background-color: #ff1c1c;
+                color: white;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+        st.write(f'👨‍✈️*{st.session_state["name"]}*')
+    st.title("Tableau de bord de visualisation des vehicules")
     df = pd.read_parquet("vehicule11.parquet")
     if compagnie:
         df = df[df['Compagnie'] == compagnie]
@@ -114,13 +155,15 @@ if st.session_state.get('authentication_status'):
         
     df = df[(df['veh_date_circulation'] >= date_debut) & (df['veh_date_circulation'] <= date_fin)]
 
+    st.sidebar.markdown("---")
 
-    matricule_input = st.sidebar.text_input("Entre la matricule")
+    # Filtrage par matricule spécifique
+    matricule_input = st.sidebar.text_input("Chercher une matricule")
     if matricule_input:
 
         df = df[df['veh_immatriculation']==matricule_input.upper()]
 
-
+    st.sidebar.write('Filtrer par :')
     # Filtrage par marque
     veh_marque_dispo = df['veh_marque'].unique().tolist()
     veh_marque = st.sidebar.multiselect("marques", veh_marque_dispo)
@@ -190,19 +233,19 @@ if st.session_state.get('authentication_status'):
 
 
     with col1:
-        kpi_card("Nombre d'enregistrement", f"{enregistrement:,.0f}", "👥")
+        kpi_card("Enregistrements", f"{enregistrement:,.0f}", "👥")
 
     with col2:
-        kpi_card("Nombre des vehicules", nb_vehicule, "🚙")
+        kpi_card("vehicules", nb_vehicule, "🚙")
 
     with col3:
-        kpi_card("vehicules anomalies", nb_vehicule_anomalie, "🎟️")
+        kpi_card("veh anomalies", nb_vehicule_anomalie, "🎟️")
 
     with col4:
-        kpi_card("vehicules cleans", nb_vehicule_clean, "🧾")
+        kpi_card("veh cleans", nb_vehicule_clean, "🧾")
     if not compagnie:
         with col5:
-            kpi_card("nombre de compagnies", nb_compagnie, "🧾")
+            kpi_card("compagnies", nb_compagnie, "🧾")
 
 
 
