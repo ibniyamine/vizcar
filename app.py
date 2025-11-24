@@ -77,6 +77,8 @@ if st.session_state.get('authentication_status') is False or st.session_state.ge
 if st.session_state.get('authentication_status'):
     compagnie = st.session_state.get("compagnie", None)
     with st.sidebar:
+
+        ### affichage du logo
         st.markdown(
         f"""
         <div style="text-align: center; margin-top: -20px; margin-bottom: 20px;">
@@ -86,21 +88,30 @@ if st.session_state.get('authentication_status'):
         """,
         unsafe_allow_html=True
         )
-        authenticator.logout()
-        # CSS pour agrandir le bouton logout
+        authenticator.logout("Logout", "main")
+
+        # CSS pour agrandir le bouton logout et étendre son conteneur
         st.markdown(
             """
             <style>
+            /* Étendre le conteneur du bouton */
+            div.stButton {
+                display: flex;
+                justify-content: stretch;   /* étire le bouton */
+                width: 100%;                /* conteneur prend toute la largeur */
+            }
+
+            /* Styliser le bouton */
             div.stButton > button:first-child {
                 background-color: #ff4b4b;
                 color: white;
-                padding: 12px 24px;
-                width: 100%;
-                height: 10px;
-                font-size: 18px;
+                width: 100%;                /* bouton occupe toute la largeur du conteneur */
+                padding: 9px 24px;
+                font-size: 20px;
                 border-radius: 8px;
                 border: none;
             }
+
             div.stButton > button:first-child:hover {
                 background-color: #ff1c1c;
                 color: white;
@@ -220,8 +231,8 @@ if st.session_state.get('authentication_status'):
                 border-radius: 10px;
                 text-align: center;
             '>
-                <div style='font-size:16px; color:#555;'>{emoji} {title}</div>
-                <div style='font-size:32px; font-weight:bold; color:#1f77b4;'>{value}</div>
+                <div style='font-size:14px; color:#555;'>{emoji} {title}</div>
+                <div style='font-size:28px; font-weight:bold; color:#1f77b4;'>{value}</div>
             </div>
         """, unsafe_allow_html=True)
 
