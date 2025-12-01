@@ -1,23 +1,30 @@
-credentials:
-  usernames:
-    anoir:
-      email: jsmith@gmail.com
-      name: Anoir ibniyamine
-      password: abc # To be replaced with hashed password
-      compagnie: AXA
-    saaruser:
-      email: jsmith@gmail.com
-      name: SAAR
-      password: Passer@123 # To be replaced with hashed password
-      compagnie: SAAR
-    admin:
-      email: rbriggs@gmail.com
-      name: sidiki Tall
-      password: Passer@123 # To be replaced with hashed password
 cookie:
   expiry_days: 30
-  key: random_signature_key # Must be string
+  key: random_signature_key
   name: random_cookie_name
+credentials:
+  usernames:
+    admin:
+      email: rbriggs@gmail.com
+      failed_login_attempts: 0
+      name: sidiki Tall
+      password: $2b$12$XfjxWtwOl9UuFi9imNEHA.DZjm3QkgS.xrs.KvPOc.xNN7iy9fQR2
+    anoir:
+      compagnie: AXA
+      email: jsmith@gmail.com
+      name: Anoir ibniyamine
+      password: $2b$12$clUngoaJL5xW18AlWm7.5OlFQDb8.xDN367psDlAZLf85yePEZTem
+    assuser:
+      compagnie: ASS
+      email: rbriggs@gmail.com
+      failed_login_attempts: 0
+      name: ASS
+      password: $2b$12$KDiNhzxsB6hzr2SbnflKvum4l7uhXAnij76uzKLrU8V5Cm8Hyj69S
+    saaruser:
+      compagnie: SAAR
+      email: jsmith@gmail.com
+      name: SAAR
+      password: $2b$12$MittBJxhi6qB833Swm5XeOy0yE2zW3nuNjJ99OPWg5HcFAvjL6BGe
 preauthorized:
   emails:
   - ibniyamineanoir@gmail.com

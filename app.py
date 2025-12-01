@@ -4,6 +4,7 @@ import plotly.express as px
 import streamlit_authenticator as stauth
 import yaml
 import base64
+from utils import *
 
 
 
@@ -28,16 +29,7 @@ authenticator = stauth.Authenticate(
 
 
 # CSS personnalisé
-st.markdown("""
-    <style>
-        body {
-            background-color: #0E1117;
-        }
-        .stApp {
-            background: linear-gradient(135deg, #0f172a 0%, #111827 60%, #0b1220 100%)
-        }
-    </style>
-""", unsafe_allow_html=True)
+personaliser_body()
 
 # Fonction pour convertir une image locale en base64
 def get_base64_of_image(image_path):
@@ -53,7 +45,7 @@ logo_base64 = get_base64_of_image("assets/logo.png")
 
 try:
     authenticator.login()
-except LoginError as e:
+except Exception as e:
     st.error(e)
 
 # Authenticating user
@@ -79,47 +71,11 @@ if st.session_state.get('authentication_status'):
     with st.sidebar:
 
         ### affichage du logo
-        st.markdown(
-        f"""
-        <div style="text-align: center; margin-top: -20px; margin-bottom: 20px;">
-            <img src="data:image/png;base64,{logo_base64}" 
-                 style="border-radius: 50%; width:90px; height:90px; margin:10px;">
-        </div>
-        """,
-        unsafe_allow_html=True
-        )
+        displayLogo(logo_base64)
         authenticator.logout("Logout", "main")
 
         # CSS pour agrandir le bouton logout et étendre son conteneur
-        st.markdown(
-            """
-            <style>
-            /* Étendre le conteneur du bouton */
-            div.stButton {
-                display: flex;
-                justify-content: stretch;   /* étire le bouton */
-                width: 100%;                /* conteneur prend toute la largeur */
-            }
-
-            /* Styliser le bouton */
-            div.stButton > button:first-child {
-                background-color: #ff4b4b;
-                color: white;
-                width: 100%;                /* bouton occupe toute la largeur du conteneur */
-                padding: 9px 24px;
-                font-size: 20px;
-                border-radius: 8px;
-                border: none;
-            }
-
-            div.stButton > button:first-child:hover {
-                background-color: #ff1c1c;
-                color: white;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+        grandir_bouton_logout()
         st.write(f'👨‍✈️*{st.session_state["name"]}*')
     st.title("Tableau de bord de visualisation des vehicules")
     df = pd.read_parquet("vehicule11.parquet")
@@ -219,23 +175,6 @@ if st.session_state.get('authentication_status'):
     nb_compagnie = df['Compagnie'].nunique()
 
 
-    
-
-
-    # Fonction pour créer une carte
-    def kpi_card(title, value, emoji):
-        st.markdown(f"""
-            <div style='
-                background-color: #f0f2f6;
-                padding: 20px;
-                border-radius: 10px;
-                text-align: center;
-            '>
-                <div style='font-size:14px; color:#555;'>{emoji} {title}</div>
-                <div style='font-size:28px; font-weight:bold; color:#1f77b4;'>{value}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
     # Affichage en colonnes
     if not compagnie:
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -327,6 +266,34 @@ if st.session_state.get('authentication_status'):
             color_continuous_scale="bluered",
         )
         fig_modele.update_layout(template="plotly_dark", height=420, margin=dict(l=10, r=10, t=40, b=10))
+        st.plotly_chart(fig_modele, width='stretch')
+
+    # les meilleures client
+      # Distribution par modèle
+    if "veh_immatriculation" in df.columns:
+        modele_counts = (
+            df["veh_immatriculation"]
+            .dropna()                              # enlève les NaN
+            .astype(str)                           # convertit en string
+            .loc[lambda x: (x.str.strip() != "") & (x.str.lower() != "false")]  # enlève vides et "false"
+            .value_counts()
+            .reset_index()
+        )
+        modele_counts.columns = ["veh_immatriculation", "count"]
+
+        fig_modele = px.bar(
+            modele_counts.head(30),
+            x="veh_immatriculation",
+            y="count",
+            title="Top 30 Clients (par immatriculation)",
+            color="count",
+            color_continuous_scale="bluered",
+        )
+        fig_modele.update_layout(
+            template="plotly_dark",
+            height=420,
+            margin=dict(l=10, r=10, t=40, b=10)
+        )
         st.plotly_chart(fig_modele, width='stretch')
 
     if not compagnie:
